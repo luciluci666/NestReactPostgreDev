@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  client:
+    container_name: client
+    build:
+      context: ./client
+    restart: always
+    ports:
+    - '${CLIENT_PORT}:3000'
+    command: npm run start
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+  api:
+    container_name: api
+    build:
+      context: ./api
+    restart: always
+    ports:
+    - '${API_PORT}:3000'
+    command: npm run start:dev
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    environment:
+    - MODE=${MODE}
+    - DATABASE_URL=${DATABASE_URL}
+    - DATABASE_HOST=${DATABASE_HOST}
+    - DATABASE_PORT=${DATABASE_PORT}
+    - DATABASE_USER=${DATABASE_USER}
+    - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    - DATABASE_NAME=${DATABASE_NAME}
+    - REDIS_HOST=${REDIS_HOST}
+    - REDIS_PORT=${REDIS_PORT}
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - '${REDIS_PORT}:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes: 
+      - redis:/data
+
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./infra/migrations:/var/lib/postgresql/migrations
+    ports:
+      - '${DATABASE_PORT}:5432'
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: masterkey
+    volumes:
+    - pgadmin:/var/lib/pgadmin
+    ports:
+      - "8080:80"
+
+volumes:
+  redis:
+    driver: local
+  postgres:
+    driver: local
+  pgadmin:
+    driver: local
+
